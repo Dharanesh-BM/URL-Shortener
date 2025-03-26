@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+    <div class="relative py-3 sm:max-w-xl sm:mx-auto">
+        <div class="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
+        <div class="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
+            <div class="max-w-md mx-auto">
+                <div class="divide-y divide-gray-200">
+                    <div class="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+                        <h2 class="text-3xl font-extrabold text-gray-900 mb-8 text-center">
+                            Shorten Your URL
+                        </h2>
+                        <form onsubmit="shortenURL(event)" class="mt-8 space-y-6">
+                            <div>
+                                <label for="url" class="block text-sm font-medium text-gray-700">URL to shorten</label>
+                                <input type="url" name="url" id="url" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    placeholder="https://example.com">
+                                <p class="mt-1 text-xs text-gray-500">Please include http:// or https:// in the URL</p>
+                            </div>
+                            <div>
+                                <label for="expiration" class="block text-sm font-medium text-gray-700">Expiration (Days)</label>
+                                <input type="number" name="expiration" id="expiration" min="1" value="7"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <button type="submit"
+                                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Shorten URL
+                                </button>
+                            </div>
+                        </form>
+                        <div id="result" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('access_token');
+    const authButtons = document.getElementById('auth-buttons');
+    
+    if (token) {
+        authButtons.innerHTML = `
+            <button onclick="handleLogout()" class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Logout</button>
+            <a href="/dashboard" class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">Dashboard</a>
+        `;
+    } else {
+        authButtons.innerHTML = `
+            <a href="/login" class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+            <a href="/register" class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">Register</a>
+        `;
+    }
+});
+
+async function shortenURL(event) {
+    event.preventDefault();
+    
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    const originalUrl = document.getElementById('url').value;
+    const expirationDays = document.getElementById('expiration').value;
+
+    try {
+        new URL(originalUrl); // Validate URL format
+    } catch (e) {
+        alert('Please enter a valid URL (e.g., https://example.com)');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/urls/', {
+            method: 'POST',
+            headers: {
+                'Authorization': token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                original_url: originalUrl,
+                expiration_days: parseInt(expirationDays) || 7
+            })
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+                window.location.href = '/login';
+                return;
+            }
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to create URL');
+        }
+
+        const data = await response.json();
+        
+        // Show the shortened URL
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = `
+            <div class="mt-4 p-4 bg-green-50 rounded-md">
+                <p class="text-green-700">URL shortened successfully!</p>
+                <div class="mt-2 flex items-center space-x-2">
+                    <a href="${data.short_url}" target="_blank" class="text-indigo-600 hover:text-indigo-500">
+                        ${data.short_url}
+                    </a>
+                    <button onclick="copyToClipboard('${data.short_url}')" class="text-gray-500 hover:text-gray-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Clear the form
+        document.getElementById('url').value = '';
+        document.getElementById('expiration').value = '7';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'Failed to create URL. Please try again.');
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('URL copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+    });
+}
+
+function handleLogout() {
+    localStorage.removeItem('access_token');
+    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    window.location.href = '/login';
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Register - URL Shortener{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Create your account
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Or
+                <a href="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    sign in to your existing account
+                </a>
+            </p>
+        </div>
+        <div id="error-message" class="rounded-md bg-red-50 p-4 hidden">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800" id="error-text"></h3>
+                </div>
+            </div>
+        </div>
+        <form class="mt-8 space-y-6" id="register-form" novalidate>
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div>
+                    <label for="email" class="sr-only">Email address</label>
+                    <input id="email" name="email" type="email" required
+                        class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                        placeholder="Email address"
+                        pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+                    <div class="text-xs text-red-600 hidden" id="email-error"></div>
+                </div>
+                <div>
+                    <label for="username" class="sr-only">Username</label>
+                    <input id="username" name="username" type="text" required
+                        class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                        placeholder="Username"
+                        pattern="[a-zA-Z0-9_-]{3,20}">
+                    <div class="text-xs text-red-600 hidden" id="username-error"></div>
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <input id="password" name="password" type="password" required
+                        class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                        placeholder="Password"
+                        minlength="8">
+                    <div class="text-xs text-red-600 hidden" id="password-error"></div>
+                </div>
+            </div>
+
+            <div>
+                <button type="submit"
+                    class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <svg class="h-5 w-5 text-indigo-500 group-hover:text-indigo-400"
+                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                            aria-hidden="true">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </span>
+                    Create Account
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showError(message) {
+    const errorDiv = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
+    errorText.textContent = message;
+    errorDiv.classList.remove('hidden');
+}
+
+function hideError() {
+    const errorDiv = document.getElementById('error-message');
+    errorDiv.classList.add('hidden');
+}
+
+function validateEmail(email) {
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return re.test(String(email).toLowerCase());
+}
+
+function validateUsername(username) {
+    const re = /^[a-zA-Z0-9_-]{3,20}$/;
+    return re.test(username);
+}
+
+function validatePassword(password) {
+    return password.length >= 8;
+}
+
+function showFieldError(fieldId, message) {
+    const errorDiv = document.getElementById(`${fieldId}-error`);
+    errorDiv.textContent = message;
+    errorDiv.classList.remove('hidden');
+    document.getElementById(fieldId).classList.add('border-red-500');
+}
+
+function hideFieldError(fieldId) {
+    const errorDiv = document.getElementById(`${fieldId}-error`);
+    errorDiv.classList.add('hidden');
+    document.getElementById(fieldId).classList.remove('border-red-500');
+}
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError();
+    
+    // Clear previous field errors
+    ['email', 'username', 'password'].forEach(field => hideFieldError(field));
+    
+    const email = document.getElementById('email').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    
+    // Client-side validation
+    let hasError = false;
+    
+    if (!validateEmail(email)) {
+        showFieldError('email', 'Please enter a valid email address');
+        hasError = true;
+    }
+    
+    if (!validateUsername(username)) {
+        showFieldError('username', 'Username must be 3-20 characters long and contain only letters, numbers, underscores, and hyphens');
+        hasError = true;
+    }
+    
+    if (!validatePassword(password)) {
+        showFieldError('password', 'Password must be at least 8 characters long');
+        hasError = true;
+    }
+    
+    if (hasError) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/users/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: email,
+                username: username,
+                password: password
+            })
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            if (responseData.detail) {
+                if (responseData.detail.includes('Email')) {
+                    showFieldError('email', responseData.detail);
+                } else if (responseData.detail.includes('Username')) {
+                    showFieldError('username', responseData.detail);
+                } else {
+                    showError(responseData.detail);
+                }
+            } else {
+                showError('Registration failed. Please try again.');
+            }
+            return;
+        }
+
+        // After successful registration, log in automatically
+        const loginData = new URLSearchParams();
+        loginData.append('username', username);
+        loginData.append('password', password);
+
+        const loginResponse = await fetch('/api/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: loginData
+        });
+
+        if (!loginResponse.ok) {
+            const error = await loginResponse.json();
+            showError(error.detail || 'Auto-login failed. Please try logging in manually.');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
+            return;
+        }
+
+        const data = await loginResponse.json();
+        const token = `${data.token_type} ${data.access_token}`;
+        localStorage.setItem('access_token', token);
+        document.cookie = `access_token=${token}; path=/`;
+        window.location.href = '/dashboard';
+    } catch (error) {
+        console.error('Error:', error);
+        showError('An unexpected error occurred. Please try again.');
+    }
+});
+
+// Add input event listeners for real-time validation
+document.getElementById('email').addEventListener('input', function() {
+    if (this.value.trim()) {
+        if (validateEmail(this.value.trim())) {
+            hideFieldError('email');
+        } else {
+            showFieldError('email', 'Please enter a valid email address');
+        }
+    }
+});
+
+document.getElementById('username').addEventListener('input', function() {
+    if (this.value.trim()) {
+        if (validateUsername(this.value.trim())) {
+            hideFieldError('username');
+        } else {
+            showFieldError('username', 'Username must be 3-20 characters long and contain only letters, numbers, underscores, and hyphens');
+        }
+    }
+});
+
+document.getElementById('password').addEventListener('input', function() {
+    if (this.value) {
+        if (validatePassword(this.value)) {
+            hideFieldError('password');
+        } else {
+            showFieldError('password', 'Password must be at least 8 characters long');
+        }
+    }
+});
+</script>
+{% endblock %} 

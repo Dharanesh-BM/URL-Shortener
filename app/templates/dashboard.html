@@ -1,0 +1,997 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - URL Shortener{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-900">
+                Dashboard
+            </h1>
+            <div class="flex space-x-4">
+                <button onclick="showCreateURLModal()"
+                    class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+                    Create New URL
+                </button>
+                <button onclick="handleLogout()"
+                    class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="px-4 py-6 sm:px-0">
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Original URL
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Short URL
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Created At
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Expires At
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="urlTableBody">
+                            <!-- URLs will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Create URL Modal -->
+<div id="createURLModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        <div
+            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Create New Short URL</h3>
+                <form id="createURLForm">
+                    <div class="mb-4">
+                        <label for="originalUrl" class="block text-sm font-medium text-gray-700">Original URL</label>
+                        <input type="url" name="originalUrl" id="originalUrl" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            placeholder="https://example.com">
+                        <p class="mt-1 text-xs text-gray-500">Please include http:// or https:// in the URL</p>
+                    </div>
+                    <div class="mb-4">
+                        <label for="customAlias" class="block text-sm font-medium text-gray-700">Custom Alias
+                            (Optional)</label>
+                        <input type="text" name="customAlias" id="customAlias"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                    <div class="mb-4">
+                        <label for="expirationDays" class="block text-sm font-medium text-gray-700">Expiration (Days)</label>
+                        <input type="number" name="expirationDays" id="expirationDays" min="1" value="7"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                </form>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onclick="createURL()"
+                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    Create
+                </button>
+                <button type="button" onclick="hideCreateURLModal()"
+                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- URL Stats Modal -->
+<div id="statsModal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                            URL Statistics
+                        </h3>
+                        <div class="mt-4">
+                            <div id="statsContent" class="space-y-4">
+                                <!-- Stats will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm" onclick="closeStatsModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                            Delete URL
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">
+                                Are you sure you want to delete this URL? This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" id="confirmDelete" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    Delete
+                </button>
+                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" onclick="closeDeleteModal()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    try {
+        await fetchURLs();
+    } catch (error) {
+        console.error('Error:', error);
+        if (error.status === 401) {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+        }
+    }
+});
+
+async function fetchURLs() {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/urls/', {
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Failed to fetch URLs');
+        }
+
+        const urls = await response.json();
+        const tableBody = document.getElementById('urlTableBody');
+        tableBody.innerHTML = '';
+
+        if (urls.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.innerHTML = `
+                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                    No URLs found. <a href="/" class="text-indigo-600 hover:text-indigo-900">Create your first shortened URL</a>
+                </td>
+            `;
+            tableBody.appendChild(emptyRow);
+            return;
+        }
+
+        urls.forEach(url => {
+            const row = document.createElement('tr');
+            const shortUrl = `${window.location.origin}/${url.short_code}`;
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${url.original_url}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                    <a href="${shortUrl}" target="_blank">${shortUrl}</a>
+                    <button onclick="copyToClipboard('${shortUrl}')" class="ml-2 text-gray-500 hover:text-gray-700">
+                        <svg class="h-4 w-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                    </button>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(url.created_at).toLocaleDateString()}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${url.expires_at ? new Date(url.expires_at).toLocaleDateString() : 'Never'}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${url.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                        ${url.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <button onclick="deleteURL(${url.id})" class="text-red-600 hover:text-red-900">Delete</button>
+                    <button onclick="showURLStats(${url.id})" class="ml-2 text-blue-600 hover:text-blue-900">Stats</button>
+                </td>
+{% extends "base.html" %}
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to fetch URLs. Please try again.');
+    }
+}
+
+function showCreateURLModal() {
+    document.getElementById('createURLModal').classList.remove('hidden');
+
+{% block title %}Dashboard - URL Shortener{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100">
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-900">
+                Dashboard
+            </h1>
+            <div class="flex space-x-4">
+                <button onclick="showCreateURLModal()"
+                    class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">
+                    Create New URL
+                </button>
+                <button onclick="handleLogout()"
+                    class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="px-4 py-6 sm:px-0">
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Original URL
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Short URL
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Created At
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Expires At
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="urlTableBody">
+                            <!-- URLs will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Create URL Modal -->
+<div id="createURLModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        <div
+            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Create New Short URL</h3>
+                <form id="createURLForm">
+                    <div class="mb-4">
+                        <label for="originalUrl" class="block text-sm font-medium text-gray-700">Original URL</label>
+                        <input type="url" name="originalUrl" id="originalUrl" required
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            placeholder="https://example.com">
+                        <p class="mt-1 text-xs text-gray-500">Please include http:// or https:// in the URL</p>
+                    </div>
+                    <div class="mb-4">
+                        <label for="customAlias" class="block text-sm font-medium text-gray-700">Custom Alias
+                            (Optional)</label>
+                        <input type="text" name="customAlias" id="customAlias"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                    <div class="mb-4">
+                        <label for="expirationDays" class="block text-sm font-medium text-gray-700">Expiration (Days)</label>
+                        <input type="number" name="expirationDays" id="expirationDays" min="1" value="7"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                </form>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onclick="createURL()"
+                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    Create
+                </button>
+                <button type="button" onclick="hideCreateURLModal()"
+                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- URL Stats Modal -->
+<div id="statsModal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                            URL Statistics
+                        </h3>
+                        <div class="mt-4">
+                            <div id="statsContent" class="space-y-4">
+                                <!-- Stats will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm" onclick="closeStatsModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                            Delete URL
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">
+                                Are you sure you want to delete this URL? This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" id="confirmDelete" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    Delete
+                </button>
+                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" onclick="closeDeleteModal()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    try {
+        await fetchURLs();
+    } catch (error) {
+        console.error('Error:', error);
+        if (error.status === 401) {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+        }
+    }
+});
+
+async function fetchURLs() {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/urls/', {
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Failed to fetch URLs');
+        }
+
+        const urls = await response.json();
+        const tableBody = document.getElementById('urlTableBody');
+        tableBody.innerHTML = '';
+
+        if (urls.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.innerHTML = `
+                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                    No URLs found. <a href="/" class="text-indigo-600 hover:text-indigo-900">Create your first shortened URL</a>
+                </td>
+            `;
+            tableBody.appendChild(emptyRow);
+            return;
+        }
+
+        urls.forEach(url => {
+            const row = document.createElement('tr');
+            const shortUrl = `${window.location.origin}/${url.short_code}`;
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${url.original_url}</td>
+}
+
+function hideCreateURLModal() {
+    document.getElementById('createURLModal').classList.add('hidden');
+    document.getElementById('createURLForm').reset();
+}
+
+async function createURL() {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    const originalUrl = document.getElementById('originalUrl').value;
+    const customAlias = document.getElementById('customAlias').value;
+    const expirationDays = document.getElementById('expirationDays').value;
+
+    // Validate URL format
+    try {
+        new URL(originalUrl); // This will throw if URL is invalid
+    } catch (e) {
+        alert('Please enter a valid URL (e.g., https://example.com)');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/urls/', {
+            method: 'POST',
+            headers: {
+                'Authorization': token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                original_url: originalUrl,
+                custom_alias: customAlias || undefined,
+                expiration_days: parseInt(expirationDays) || 7
+            })
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return;
+            }
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to create URL');
+        }
+
+        hideCreateURLModal();
+        await fetchURLs();
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'Failed to create URL. Please try again.');
+    }
+}
+
+async function deleteURL(urlId) {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    if (!confirm('Are you sure you want to delete this URL?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/urls/${urlId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Failed to delete URL');
+        }
+
+        await fetchURLs();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to delete URL. Please try again.');
+    }
+}
+
+async function showURLStats(urlId) {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/urls/${urlId}/stats`, {
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Failed to fetch URL stats');
+        }
+
+        const stats = await response.json();
+        const statsContent = document.getElementById('statsContent');
+        statsContent.innerHTML = `
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-lg font-semibold">Total Visits: ${stats.total_visits}</p>
+                <p class="text-lg font-semibold mt-2">Unique Visitors: ${stats.unique_visitors}</p>
+                <div class="mt-4">
+                    <h4 class="font-semibold">Top Referrers:</h4>
+                    <ul class="mt-2 space-y-1">
+                        ${Object.entries(stats.referrer_stats).length > 0 
+                            ? Object.entries(stats.referrer_stats)
+                                .map(([referrer, count]) => 
+                                    `<li class="text-sm">${referrer || 'Direct'}: ${count} visits</li>`
+                                ).join('')
+                            : '<li class="text-sm text-gray-500">No referrer data available</li>'
+                        }
+                    </ul>
+                </div>
+            </div>
+        `;
+        document.getElementById('statsModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to fetch URL stats. Please try again.');
+    }
+}
+
+function closeStatsModal() {
+    document.getElementById('statsModal').classList.add('hidden');
+}
+
+let urlToDelete = null;
+
+function showDeleteModal(urlId) {
+    urlToDelete = urlId;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    urlToDelete = null;
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+document.getElementById('confirmDelete').addEventListener('click', async () => {
+    if (!urlToDelete) return;
+    
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`/api/urls/${urlToDelete}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (response.ok) {
+            closeDeleteModal();
+            fetchURLs(); // Refresh the URL list
+        } else {
+            throw new Error('Failed to delete URL');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to delete URL. Please try again.');
+    }
+});
+
+function handleLogout() {
+    localStorage.removeItem('access_token');
+    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    window.location.href = '/login';
+}
+</script>
+{% endblock %} 
+                                .map(([referrer, count]) => 
+                                    `<li class="text-sm">${referrer || 'Direct'}: ${count} visits</li>`
+                                ).join('')
+                            : '<li class="text-sm text-gray-500">No referrer data available</li>'
+                        }
+                    </ul>
+                </div>
+            </div>
+        `;
+        document.getElementById('statsModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to fetch URL stats. Please try again.');
+    }
+}
+
+function closeStatsModal() {
+    document.getElementById('statsModal').classList.add('hidden');
+}
+
+let urlToDelete = null;
+
+function showDeleteModal(urlId) {
+    urlToDelete = urlId;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    urlToDelete = null;
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+document.getElementById('confirmDelete').addEventListener('click', async () => {
+    if (!urlToDelete) return;
+    
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`/api/urls/${urlToDelete}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (response.ok) {
+            closeDeleteModal();
+            fetchURLs(); // Refresh the URL list
+        } else {
+            throw new Error('Failed to delete URL');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to delete URL. Please try again.');
+    }
+});
+
+function handleLogout() {
+    localStorage.removeItem('access_token');
+    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    window.location.href = '/login';
+}
+</script>
+{% endblock %} 
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                    <a href="${shortUrl}" target="_blank">${shortUrl}</a>
+                    <button onclick="copyToClipboard('${shortUrl}')" class="ml-2 text-gray-500 hover:text-gray-700">
+                        <svg class="h-4 w-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                    </button>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(url.created_at).toLocaleDateString()}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${url.expires_at ? new Date(url.expires_at).toLocaleDateString() : 'Never'}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${url.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                        ${url.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <button onclick="deleteURL('${url.id}')" class="text-red-600 hover:text-red-900">Delete</button>
+                    <button onclick="showURLStats('${url.id}')" class="ml-2 text-blue-600 hover:text-blue-900">Stats</button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to fetch URLs. Please try again.');
+    }
+}
+
+function showCreateURLModal() {
+    document.getElementById('createURLModal').classList.remove('hidden');
+}
+
+function hideCreateURLModal() {
+    document.getElementById('createURLModal').classList.add('hidden');
+    document.getElementById('createURLForm').reset();
+}
+
+async function createURL() {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    const originalUrl = document.getElementById('originalUrl').value;
+    const customAlias = document.getElementById('customAlias').value;
+    const expirationDays = document.getElementById('expirationDays').value;
+
+    // Validate URL format
+    try {
+        new URL(originalUrl); // This will throw if URL is invalid
+    } catch (e) {
+        alert('Please enter a valid URL (e.g., https://example.com)');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/urls/', {
+            method: 'POST',
+            headers: {
+                'Authorization': token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                original_url: originalUrl,
+                custom_alias: customAlias || undefined,
+                expiration_days: parseInt(expirationDays) || 7
+            })
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return;
+            }
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to create URL');
+        }
+
+        hideCreateURLModal();
+        await fetchURLs();
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'Failed to create URL. Please try again.');
+    }
+}
+
+async function deleteURL(urlId) {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    if (!confirm('Are you sure you want to delete this URL?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/urls/${urlId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Failed to delete URL');
+        }
+
+        await fetchURLs();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to delete URL. Please try again.');
+    }
+}
+
+async function showURLStats(urlId) {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/urls/${urlId}/stats`, {
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Failed to fetch URL stats');
+        }
+
+        const stats = await response.json();
+        const statsContent = document.getElementById('statsContent');
+        statsContent.innerHTML = `
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-lg font-semibold">Total Visits: ${stats.total_visits}</p>
+                <p class="text-lg font-semibold mt-2">Unique Visitors: ${stats.unique_visitors}</p>
+                <div class="mt-4">
+                    <h4 class="font-semibold">Top Referrers:</h4>
+                    <ul class="mt-2 space-y-1">
+                        ${Object.entries(stats.referrer_stats).length > 0 
+                            ? Object.entries(stats.referrer_stats)
+                                .map(([referrer, count]) => 
+                                    `<li class="text-sm">${referrer || 'Direct'}: ${count} visits</li>`
+                                ).join('')
+                            : '<li class="text-sm text-gray-500">No referrer data available</li>'
+                        }
+                    </ul>
+                </div>
+            </div>
+        `;
+        document.getElementById('statsModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to fetch URL stats. Please try again.');
+    }
+}
+
+function closeStatsModal() {
+    document.getElementById('statsModal').classList.add('hidden');
+}
+
+let urlToDelete = null;
+
+function showDeleteModal(urlId) {
+    urlToDelete = urlId;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    urlToDelete = null;
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+document.getElementById('confirmDelete').addEventListener('click', async () => {
+    if (!urlToDelete) return;
+    
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`/api/urls/${urlToDelete}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': token
+            }
+        });
+
+        if (response.ok) {
+            closeDeleteModal();
+            fetchURLs(); // Refresh the URL list
+        } else {
+            throw new Error('Failed to delete URL');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to delete URL. Please try again.');
+    }
+});
+
+function handleLogout() {
+    localStorage.removeItem('access_token');
+    document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    window.location.href = '/login';
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show a temporary success message
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg';
+        toast.textContent = 'URL copied to clipboard!';
+        document.body.appendChild(toast);
+        
+        // Remove the message after 2 seconds
+        setTimeout(() => {
+            toast.remove();
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        alert('Failed to copy URL to clipboard');
+    });
+}
+</script>
+{% endblock %} 
